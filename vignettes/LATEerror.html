@@ -184,34 +184,62 @@ where <span class="math inline">\(X_i = (Y_i, D_i, Z_i, V_i)^\top\)</span> and <
 <div id="example" class="section level2">
 <h2>Example</h2>
 <p>The following presents <code>LATEerror</code> implementation based on simulated data. The simulated data is generated as follows.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n &lt;-<span class="st"> </span><span class="dv">1000</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n &lt;-<span class="st"> </span><span class="dv">2000</span>
 <span class="kw">set.seed</span>(<span class="dv">102</span>)
 mydata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">U1 =</span> <span class="kw">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>), <span class="dt">U2 =</span> <span class="kw">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>))
 mydata &lt;-<span class="st"> </span>mydata %&gt;%
 <span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">Z =</span> <span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.5</span>)) %&gt;%
 <span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">V =</span> <span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.5</span>) +<span class="st"> </span><span class="dv">1</span>) %&gt;%
-<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">Ds =</span> <span class="kw">ifelse</span>(( -<span class="fl">1.25</span> +<span class="st"> </span>Z +<span class="st"> </span><span class="fl">0.5</span> *<span class="st"> </span>V -<span class="st"> </span>U1 &gt;=<span class="st"> </span><span class="dv">0</span>), <span class="dv">1</span>, <span class="dv">0</span>)) %&gt;%<span class="st"> </span>
-<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">D =</span> Ds *<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.8</span>) +<span class="st"> </span>(<span class="dv">1</span> -<span class="st"> </span>Ds) *<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.2</span>)) %&gt;%
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">Ds =</span> <span class="kw">ifelse</span>(( -<span class="dv">2</span> +<span class="st"> </span>Z +<span class="st"> </span>V -<span class="st"> </span>U1 &gt;=<span class="st"> </span><span class="dv">0</span>), <span class="dv">1</span>, <span class="dv">0</span>)) %&gt;%
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">D =</span> Ds *<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.75</span>) +<span class="st"> </span>(<span class="dv">1</span> -<span class="st"> </span>Ds) *<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.25</span>)) %&gt;%
 <span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">Y =</span> <span class="dv">1</span> +<span class="st"> </span>Ds +<span class="st"> </span>U2)</code></pre></div>
 <p>The following code implements <code>LATEerror</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">102</span>)
-gmm &lt;-<span class="st"> </span>LATEerror::<span class="kw">LATEerror</span>(<span class="dt">Y =</span> mydata$Y, <span class="dt">D =</span> mydata$D, <span class="dt">Z =</span> mydata$Z, <span class="dt">V =</span> mydata$V)</code></pre></div>
+gmmest &lt;-<span class="st"> </span><span class="kw">LATEerror</span>(<span class="dt">Y =</span> mydata$Y, <span class="dt">D =</span> mydata$D, <span class="dt">Z =</span> mydata$Z, <span class="dt">V =</span> mydata$V)</code></pre></div>
 <p>The results from <code>LATEerror</code> can be checked by the following codes.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># estimates by the pilot GMM estimation</span>
-gmm$pilot$estimate
-<span class="co"># standard errors by the pilot GMM estimation</span>
-gmm$pilot$se
-<span class="co"># 95% confidence intervals by the pilot GMM estimation</span>
-gmm$pilot$ci
-
-<span class="co"># estimates by the optimal GMM estimation</span>
-gmm$optimal$estimate
-<span class="co"># standard errors by the optimal GMM estimation</span>
-gmm$optimal$se
-<span class="co"># 95% confidence intervals by the optimal GMM estimation</span>
-gmm$optimal$ci
-<span class="co"># overidentification test by the optimal GMM estimation</span>
-gmm$optimal$overidentification</code></pre></div>
+gmmest$pilot$estimate</code></pre></div>
+<pre><code>##        LATE first-stage        E(Z)       tau0*       tau1*          m0 
+##   1.2115096   0.2736073   0.5005000   0.9490311   0.7763856   0.2913774 
+##          m1        p01*        p02*        p11*        p12* 
+##   0.1495142   0.1196945   0.3926138   0.3545388   0.7293310</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># standard errors by the pilot GMM estimation</span>
+gmmest$pilot$se</code></pre></div>
+<pre><code>##        LATE first-stage        E(Z)       tau0*       tau1*          m0 
+##  0.34490801  0.07129069  0.01118033  0.33178109  0.30846034  0.05384143 
+##          m1        p01*        p02*        p11*        p12* 
+##  0.10638808  0.06685180  0.08074644  0.07278583  0.12877337</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># 95% confidence intervals by the pilot GMM estimation</span>
+gmmest$pilot$ci</code></pre></div>
+<pre><code>##                  LATE first-stage      E(Z)     tau0*     tau1*        m0
+## 95%CI lower 0.5355023   0.1338801 0.4785869 0.2987521 0.1718145 0.1858501
+## 95%CI upper 1.8875168   0.4133345 0.5224131 1.5993101 1.3809568 0.3969047
+##                      m1        p01*      p02*      p11*      p12*
+## 95%CI lower -0.05900266 -0.01133265 0.2343537 0.2118812 0.4769399
+## 95%CI upper  0.35803097  0.25072160 0.5508739 0.4971964 0.9817222</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># estimates by the optimal GMM estimation</span>
+gmmest$optimal$estimate</code></pre></div>
+<pre><code>##        LATE first-stage        E(Z)       tau0*       tau1*          m0 
+##   1.2115096   0.2736073   0.5005000   0.9490311   0.7763856   0.2913774 
+##          m1        p01*        p02*        p11*        p12* 
+##   0.1495142   0.1196945   0.3926138   0.3545388   0.7293310</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># standard errors by the optimal GMM estimation</span>
+gmmest$optimal$se</code></pre></div>
+<pre><code>##        LATE first-stage        E(Z)       tau0*       tau1*          m0 
+##  0.34490801  0.07129069  0.01118033  0.33178109  0.30846034  0.05384143 
+##          m1        p01*        p02*        p11*        p12* 
+##  0.10638808  0.06685180  0.08074644  0.07278583  0.12877337</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># 95% confidence intervals by the optimal GMM estimation</span>
+gmmest$optimal$ci</code></pre></div>
+<pre><code>##                  LATE first-stage      E(Z)     tau0*     tau1*        m0
+## 95%CI lower 0.5355023   0.1338801 0.4785869 0.2987521 0.1718145 0.1858501
+## 95%CI upper 1.8875168   0.4133345 0.5224131 1.5993101 1.3809568 0.3969047
+##                      m1        p01*      p02*      p11*      p12*
+## 95%CI lower -0.05900266 -0.01133265 0.2343537 0.2118812 0.4769399
+## 95%CI upper  0.35803097  0.25072160 0.5508739 0.4971964 0.9817222</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># overidentification test by the optimal GMM estimation</span>
+gmmest$optimal$overidentification</code></pre></div>
+<pre><code>## NULL</code></pre>
 <p>Note that <code>gmm$optimal$overidentification = NULL</code> in this example since there is no over-identification restriction.</p>
 </div>
 <div id="see-also" class="section level2">
