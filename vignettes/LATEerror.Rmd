@@ -234,5 +234,4 @@ Note that `gmm$optimal$overidentification = NULL` in this example since there is
 
 Takahide Yanagi (2017): [Inference on Local Average Treatment Effects for Misclassified Treatment](http://hdl.handle.net/10086/28337)
 
-Katharine Mullen, David Ardia, David Gil, Donald Windover, James Cline (2011): [`DEoptim`: An R Package for Global Optimization by
-  Differential Evolution](http://www.jstatsoft.org/v40/i06/). Journal of Statistical Software, 40(6), 1-26.
+Katharine Mullen, David Ardia, David Gil, Donald Windover, James Cline (2011): [`DEoptim`: An R Package for Global Optimization by Differential Evolution](http://www.jstatsoft.org/v40/i06/). Journal of Statistical Software, 40(6), 1-26.
