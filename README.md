@@ -26,3 +26,4 @@ See also
 ========
 
 1.  See package vignettes "How to use `LATEerror`" for more details.
+"# LATEerror" 
