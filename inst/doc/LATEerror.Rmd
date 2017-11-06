@@ -1,0 +1,237 @@
+---
+title: "How to use **LATEerror** package in **R**"
+#author: "Takahide Yanagi (t.yanagi@r.hit-u.ac.jp)"
+#date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette explains how to use **LATEerror** package in **R**.
+The function `LATEerror` implements the generalized method of moments (GMM) inference developed in Yanagi (2017) to estimate the local average treatment effect (LATE) when the binary treatment variable may contain a measurement error. 
+
+The following explains the setting, parameters to be estimated, GMM estimation, its practical implementation, arguments and values for `LATEerror`, and a simple example.
+Here we do not explain identification for the LATE with the measurement error and theoretical properties of the GMM inference.
+See Yanagi (2017) for details.
+
+
+## Setting
+Let $\{(Y_i, D_i, Z_i, V_i)\}_{i=1}^n$ be a random sample.
+
+* $Y_i \in \mathbb{R}$ is an outcome.
+
+* $D_i \in \{0, 1\}$ is a binary treatment that may be mismeasured for the true treatment $D_i^* \in \{0, 1\}$.
+
+* $Z_i \in \{0, 1\}$ is a binary instrument.
+
+* $V_i \in \{1, 2, \dots, K \}$ is an exogenous variable such as a covariate, second instrument, or a repeated measure of the treatment where $K$ is some positive integer. 
+
+
+## Parameters
+The parameters of interest are the following $2 K + 10$ parameters
+\begin{align*}
+  \theta_0 = (\beta^*, \Delta p^*, r, \tau_0^*, \tau_1^*, m_{00}, m_{01}, m_{10}, m_{11}, p_{01}^*, \dots, p_{0K}^*, p_{11}^*, \dots, p_{1K}^*)^\top.
+\end{align*}
+where
+
+* $\beta^*$ is the LATE that is identical to the true instrumental variables estimator $[E(Y|Z=1) - E(Y|Z=0)]/[E(D^*|Z=1) - E(D^*|Z=0)]$.
+* $\Delta p^* = E(D^*|Z=1) - E(D^*|Z=0)$ is the true first-stage regression.
+* $r = E(Z)$ is the mean of $Z$.
+* $\tau_z^* = E(Y|D^*=1, Z = z) - E(Y|D^*=0, Z = z)$ is the difference of the conditional means.
+* $m_{dz} = \Pr(D \neq D^*|D^*=d, Z = z)$ is the misclassification probability.
+* $p_{zv}^* = \Pr(D^*=d|Z = z, V = v)$ is the conditional true treatment probability.
+
+$\beta^*$ and $\Delta p^*$ are the main parameters of interest, and the others are nuisance parameters due to the measurement error for the treatment.
+
+Yanagi (2017) shows identification of $\theta_0$ under some identification conditions.
+
+If we assume $m_{tz} = m_{t}$ so that the misclassification probability does not depend on $Z$ as in Assumption 4.4 (ii) of Yanagi (2017), the number of the parameters reduces to $2K+8$ and 
+\begin{align*}
+  \theta_0 = (\beta^*, \Delta p^*, r, \tau_0^*, \tau_1^*, m_{0}, m_{1}, p_{01}^*, \dots, p_{0K}^*, p_{11}^*, \dots, p_{1K}^*)^\top.
+\end{align*}
+
+
+## GMM estimation
+`LATEerror` obtains the GMM estimate $\hat \theta$ for the parameter $\theta_0$ by minimizing the following GMM criterion with respect to $\theta$:
+\begin{align*}
+  \left(\frac{1}{n} \sum_{i=1}^n g(X_i, \theta) \right)^\top \hat \Lambda \left(\frac{1}{n} \sum_{i=1}^n g(X_i, \theta) \right)
+\end{align*}
+where $X_i = (Y_i, D_i, Z_i, V_i)^\top$ and $\hat \Lambda$ is a $(4 K + 3) \times (4 K + 3)$ weighting matrix and $g(X, \theta)$ contains the following $4K+3$ elements:
+\begin{align*}
+  & \beta^* - \frac{YZr^{-1} - Y(1-Z)(1-r)^{-1}}{\Delta p^*},\\
+	& \Delta p^* - \left( \frac{DZr^{-1} -m_{01}}{1-m_{01}-m_{11}} - \frac{D(1-Z)(1-r)^{-1} -m_{00}}{1-m_{00}-m_{10}} \right),\\
+	& r - Z,\\
+	& \Big( m_{0z} + (1-m_{0z}-m_{1z})p_{zv_k}^* - D \Big) I_{zv_k},\\
+	& \left( \tau_z^* + \frac{YD-(1-m_{1z})p^*_{z v_k}\tau_z^*}{m_{0z} + (1-m_{0z}-m_{1z})p^*_{zv_k}} - \frac{Y(1-D)+(1-m_{0z})(1-p^*_{zv_k})\tau_z^*}{1-(m_{0z}+(1-m_{0z}-m_{1z})p^*_{z v_k})}\right) I_{zv_k},
+\end{align*}
+where $I_{zv_k} = \mathbf{1}(Z=z, V=k)$ is the indicator.
+The GMM estimator is based on the moment condition $E[g(X, \theta_0)] = 0$ implied by the identification of $\theta_0$.
+
+The GMM estimator is asymptotically normally distributed, so that we can implement standard inferences for $\theta_0$ such as confidence intervals estimation and over-identification test (i.e. $J$ test).
+
+We can obtain the optimal GMM estimate based on two-step estimation.
+We first obtain a pilot GMM estimate by using the identity matrix as the weighting matrix.
+We then obtain the optimal GMM estimate by an estimated optimal weighting matrix based on the pilot GMM estimate.
+See Yanagi (2017) for details.
+
+## Implementing GMM estimation
+The implementation of the GMM estimation requires solving a nonlinear optimization.
+Since the GMM criterion may have local minima, gradient-based local optimization such as quasi-Newton methods may severely depend on an initial value for the optimization.
+As a result, such gradient-based optimization may work poorly for the GMM estimation.
+
+To overcome the problem, `LATEerror` conducts two-step optimization to find the global minimum.
+In the first step of the optimization, Differential Evolution (DE) optimization is conducted via `DEoptim` by Mullen, Ardia, Gil, Windover, and Cline (2011).
+DE is a metaheuristics that is not a gradient-based optimization, so that it may circumvent the problem due to local minima.
+However, DE may find a value near global minimum, so that DE does not guarantee finding the global minimum.
+So, in the second step of the optimization, L-BFGS-B optimization in which the initial value is the argument of the minimum (argmin) by DE is conducted via `optim`.
+L-BFGS-B optimization may confirm whether the argmin by DE attains a stationary point of the criterion function.
+
+Monte Carlo simulations in Yanagi (2017) observe that the two-step optimization works well for the GMM estimation.
+
+
+## Arguments of `LATEerror`
+
+The usage for `LATEerror` is as follows.
+
+    LATEerror(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL)
+
+The variables `Y`, `D`, `Z`, and `V` must be specified, but the others are optional.
+
+* `Y`: A vector of the outcome variables
+
+* `D`: A vector of the treatment variables
+
+* `Z`: A vector of the instrumental variables
+
+* `V`: A vector of the exogenous variables
+
+* `weight`: A matrix for the weighting matrix in the pilot GMM estimation. 
+If `weight` is not specified, the identity matrix is selected as the weighting matrix.
+
+* `optimal`: Logical. Whether conducting the optimal GMM estimation. If `optimal = TRUE`, the two-step optimal GMM estimation is implemented.
+
+* `equal`: Logical. Whether assuming that the misclassification probability does not depend on the instrument. When $V$ takes only two values, `equal = TRUE` must be specified.
+
+* `lower`: A vector for lower bounds of the parameters $\theta_0$.
+By default, the lower bounds of the LATE and $\tau_z^*$ are `min(Y) - max(Y)`, that of the true first-stage is 0.001, that of the misclassification probability is 0.001, and those of the other probabilities are 0.001.
+
+* `upper`: A vector for upper bounds of the parameters $\theta_0$.
+By default, the upper bounds of the LATE and $\tau_z^*$ are `max(Y) - min(Y)`, that of the true first-stage is 0.999, that of the misclassification probability is 0.499, and those of the other probabilities are 0.999.
+
+* `controlDE`: A list for the control parameters for `DEoptim` function.
+The same arguments for `control` in `DEoptim` can be specified.
+See [DEoptim](https://cran.r-project.org/web/packages/DEoptim/index.html) for details.
+Among the control parameters, `strategy`, `NP`, `itermax`, `CR`, `F`, `initialpop`, `c`, `reltol`, and `steptol` are important for the optimization.
+The performance of the optimization may depend on these variables, so that several patterns for these variables should be tried.
+By default, `LATEerror` sets `strategy = 2`, `NP = 10 * length(lower)`, `itermax = 10000`, `CR = 0.5`, `F = 0.8`, `initialpop = NULL`, `c = 0.05`, `reltol = 1e-12`, and `steptol = 500`.
+`DEoptim` allows for parallel computing to save time.
+Parallel computing may be employed via **parallel** or **foreach** package if we set `ParallelType = 1` or `ParallelType=2`, respectively.
+By default, `ParallelType = 1`.
+By specifying `trace`, `DEoptim` prints progress of optimization at every `trace` iteration.
+By default, `trace = 100`.
+
+* `controlBFGS`: A list for the control parameters for `optim` function based on L-BFGS-B algorithm.
+The same arguments for `control` in `optim` can be specified.
+See [optim](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/optim.html) for details.
+Among the control parameters, the maximum iteration number `maxit` is important for the optimization.
+By default, `maxit = 1000`.
+
+
+## Values of `LATEerror`
+
+`LATEerror` returns a list containing the following lists.
+
+* `pilot`: A list containing the following elements for the pilot estimation based on `weight` as the weighting matrix
+    + `est`: A vector of parameter estimates
+    + `se`: A vector of standard errors
+    + `ci`: A matrix containing 95% confidence intervals for the parameters computed based on the asymptotic normality of the GMM estimator
+    + `DEresult`: A list returned by `DEoptim` that contains optimization results by Differential Evolution algorithm
+    + `BFGSresult`: A list returned by `optim` that contains optimization results by L-BFGS-B algorithm
+
+* `optimal`: A list containing the following elements for the two-step optimal estimation based on the optimal weighting matrix
+    + `est`: A vector of parameter estimates
+    + `se`: A vector of standard errors
+    + `ci`: A matrix containing 95% confidence intervals for the parameters computed based on the asymptotic normality of the GMM estimator
+    + `overidentification`: A vector for test statistic value and p-value for the over-identification test. It is `NULL` if there is no over-identification restriction
+    + `DEresult`: A list returned by `DEoptim` that contains optimization results by Differential Evolution algorithm
+    + `BFGSresult`: A list returned by `optim` that contains optimization results by L-BFGS-B algorithm
+
+
+## Remark
+
+The following are general remarks.
+
+* The exogenous variable $V$ must take $K$ consecutive discrete values with positive probabilities $\Pr(Z=z, V=v) > 0$ for $z=0,1$ and $v=1,2,\dots,K$. 
+
+* The variables `Y`, `D`, `Z`, and `V` cannot contain missing values.
+
+* DE optimization is based on random sampling numbers.
+For replicability, it is strongly recommended that `set.seed` is called before implementing `LATEerror`.
+
+* The performance of DE optimization may depend on its control arguments `controlDE` and `controlBFGS`.
+It is highly recommended to attempt several values for the arguments to find the global minimum.
+
+* If an estimate for a parameter is equal to the specified lower or upper bound, it might imply a failure of optimization convergence.
+In this case, you should try different values for `controlDE` and `controlBFGS`.
+
+## Example
+
+The following presents `LATEerror` implementation based on simulated data.
+The simulated data is generated as follows.
+
+```{r, eval = FALSE}
+n <- 2000
+set.seed(102)
+mydata <- data.frame(U1 = rnorm(n, 0, 1), U2 = rnorm(n, 0, 1))
+mydata <- mydata %>%
+  dplyr::mutate(Z = rbinom(n, size = 1, prob = 0.5)) %>%
+  dplyr::mutate(V = rbinom(n, size = 1, prob = 0.5) + 1) %>%
+  dplyr::mutate(Ds = ifelse(( -2 + Z + V - U1 >= 0), 1, 0)) %>%
+  dplyr::mutate(D = Ds * rbinom(n, size = 1, prob = 0.75) + (1 - Ds) * rbinom(n, size = 1, prob = 0.25)) %>%
+  dplyr::mutate(Y = 1 + Ds + U2)
+```
+
+The following code implements `LATEerror`.
+
+```{r, eval = FALSE}
+set.seed(102)
+gmmest <- LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V)
+```
+
+```{r, eval = TRUE, echo = FALSE}
+load(file = system.file('example', 'sysdata.rda', package = 'LATEerror'))
+```
+
+The results from `LATEerror` can be checked by the following codes.
+
+```{r, eval = TRUE}
+# estimates by the pilot GMM estimation
+gmmest$pilot$estimate
+# standard errors by the pilot GMM estimation
+gmmest$pilot$se
+# 95% confidence intervals by the pilot GMM estimation
+gmmest$pilot$ci
+
+# estimates by the optimal GMM estimation
+gmmest$optimal$estimate
+# standard errors by the optimal GMM estimation
+gmmest$optimal$se
+# 95% confidence intervals by the optimal GMM estimation
+gmmest$optimal$ci
+# overidentification test by the optimal GMM estimation
+gmmest$optimal$overidentification
+```
+
+Note that `gmm$optimal$overidentification = NULL` in this example since there is no over-identification restriction.
+
+## See Also
+[DEoptim](https://cran.r-project.org/web/packages/DEoptim/index.html), [optim](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/optim.html)
+
+
+## References
+
+Takahide Yanagi (2017): [Inference on Local Average Treatment Effects for Misclassified Treatment](http://hdl.handle.net/10086/28337)
+
+Katharine Mullen, David Ardia, David Gil, Donald Windover, James Cline (2011): [`DEoptim`: An R Package for Global Optimization by Differential Evolution](http://www.jstatsoft.org/v40/i06/). Journal of Statistical Software, 40(6), 1-26.
