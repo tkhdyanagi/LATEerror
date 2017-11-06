@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+
+<title>How to use LATEerror package in R</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">How to use <strong>LATEerror</strong> package in <strong>R</strong></h1>
+
+
+
+<p>This vignette explains how to use <strong>LATEerror</strong> package in <strong>R</strong>. The function <code>LATEerror</code> implements the generalized method of moments (GMM) inference developed in Yanagi (2017) to estimate the local average treatment effect (LATE) when the binary treatment variable may contain a measurement error.</p>
+<p>The following explains the setting, parameters to be estimated, GMM estimation, its practical implementation, arguments and values for <code>LATEerror</code>, and a simple example. Here we do not explain identification for the LATE with the measurement error and theoretical properties of the GMM inference. See Yanagi (2017) for details.</p>
+<div id="setting" class="section level2">
+<h2>Setting</h2>
+<p>Let <span class="math inline">\(\{(Y_i, D_i, Z_i, V_i)\}_{i=1}^n\)</span> be a random sample.</p>
+<ul>
+<li><p><span class="math inline">\(Y_i \in \mathbb{R}\)</span> is an outcome.</p></li>
+<li><p><span class="math inline">\(D_i \in \{0, 1\}\)</span> is a binary treatment that may be mismeasured for the true treatment <span class="math inline">\(D_i^* \in \{0, 1\}\)</span>.</p></li>
+<li><p><span class="math inline">\(Z_i \in \{0, 1\}\)</span> is a binary instrument.</p></li>
+<li><p><span class="math inline">\(V_i \in \{1, 2, \dots, K \}\)</span> is an exogenous variable such as a covariate, second instrument, or a repeated measure of the treatment where <span class="math inline">\(K\)</span> is some positive integer.</p></li>
+</ul>
+</div>
+<div id="parameters" class="section level2">
+<h2>Parameters</h2>
+The parameters of interest are the following <span class="math inline">\(2 K + 10\)</span> parameters
+<span class="math display">\[\begin{align*}
+  \theta_0 = (\beta^*, \Delta p^*, r, \tau_0^*, \tau_1^*, m_{00}, m_{01}, m_{10}, m_{11}, p_{01}^*, \dots, p_{0K}^*, p_{11}^*, \dots, p_{1K}^*)^\top.
+\end{align*}\]</span>
+<p>where</p>
+<ul>
+<li><span class="math inline">\(\beta^*\)</span> is the LATE that is identical to the true instrumental variables estimator <span class="math inline">\([E(Y|Z=1) - E(Y|Z=0)]/[E(D^*|Z=1) - E(D^*|Z=0)]\)</span>.</li>
+<li><span class="math inline">\(\Delta p^* = E(D^*|Z=1) - E(D^*|Z=0)\)</span> is the true first-stage regression.</li>
+<li><span class="math inline">\(r = E(Z)\)</span> is the mean of <span class="math inline">\(Z\)</span>.</li>
+<li><span class="math inline">\(\tau_z^* = E(Y|D^*=1, Z = z) - E(Y|D^*=0, Z = z)\)</span> is the difference of the conditional means.</li>
+<li><span class="math inline">\(m_{dz} = \Pr(D \neq D^*|D^*=d, Z = z)\)</span> is the misclassification probability.</li>
+<li><span class="math inline">\(p_{zv}^* = \Pr(D^*=d|Z = z, V = v)\)</span> is the conditional true treatment probability.</li>
+</ul>
+<p><span class="math inline">\(\beta^*\)</span> and <span class="math inline">\(\Delta p^*\)</span> are the main parameters of interest, and the others are nuisance parameters due to the measurement error for the treatment.</p>
+<p>Yanagi (2017) shows identification of <span class="math inline">\(\theta_0\)</span> under some identification conditions.</p>
+If we assume <span class="math inline">\(m_{tz} = m_{t}\)</span> so that the misclassification probability does not depend on <span class="math inline">\(Z\)</span> as in Assumption 4.4 (ii) of Yanagi (2017), the number of the parameters reduces to <span class="math inline">\(2K+8\)</span> and
+<span class="math display">\[\begin{align*}
+  \theta_0 = (\beta^*, \Delta p^*, r, \tau_0^*, \tau_1^*, m_{0}, m_{1}, p_{01}^*, \dots, p_{0K}^*, p_{11}^*, \dots, p_{1K}^*)^\top.
+\end{align*}\]</span>
+</div>
+<div id="gmm-estimation" class="section level2">
+<h2>GMM estimation</h2>
+<code>LATEerror</code> obtains the GMM estimate <span class="math inline">\(\hat \theta\)</span> for the parameter <span class="math inline">\(\theta_0\)</span> by minimizing the following GMM criterion with respect to <span class="math inline">\(\theta\)</span>:
+<span class="math display">\[\begin{align*}
+  \left(\frac{1}{n} \sum_{i=1}^n g(X_i, \theta) \right)^\top \hat \Lambda \left(\frac{1}{n} \sum_{i=1}^n g(X_i, \theta) \right)
+\end{align*}\]</span>
+where <span class="math inline">\(X_i = (Y_i, D_i, Z_i, V_i)^\top\)</span> and <span class="math inline">\(\hat \Lambda\)</span> is a <span class="math inline">\((4 K + 3) \times (4 K + 3)\)</span> weighting matrix and <span class="math inline">\(g(X, \theta)\)</span> contains the following <span class="math inline">\(4K+3\)</span> elements:
+<span class="math display">\[\begin{align*}
+  &amp; \beta^* - \frac{YZr^{-1} - Y(1-Z)(1-r)^{-1}}{\Delta p^*},\\
+    &amp; \Delta p^* - \left( \frac{DZr^{-1} -m_{01}}{1-m_{01}-m_{11}} - \frac{D(1-Z)(1-r)^{-1} -m_{00}}{1-m_{00}-m_{10}} \right),\\
+    &amp; r - Z,\\
+    &amp; \Big( m_{0z} + (1-m_{0z}-m_{1z})p_{zv_k}^* - D \Big) I_{zv_k},\\
+    &amp; \left( \tau_z^* + \frac{YD-(1-m_{1z})p^*_{z v_k}\tau_z^*}{m_{0z} + (1-m_{0z}-m_{1z})p^*_{zv_k}} - \frac{Y(1-D)+(1-m_{0z})(1-p^*_{zv_k})\tau_z^*}{1-(m_{0z}+(1-m_{0z}-m_{1z})p^*_{z v_k})}\right) I_{zv_k},
+\end{align*}\]</span>
+<p>where <span class="math inline">\(I_{zv_k} = \mathbf{1}(Z=z, V=k)\)</span> is the indicator. The GMM estimator is based on the moment condition <span class="math inline">\(E[g(X, \theta_0)] = 0\)</span> implied by the identification of <span class="math inline">\(\theta_0\)</span>.</p>
+<p>The GMM estimator is asymptotically normally distributed, so that we can implement standard inferences for <span class="math inline">\(\theta_0\)</span> such as confidence intervals estimation and over-identification test (i.e. <span class="math inline">\(J\)</span> test).</p>
+<p>We can obtain the optimal GMM estimate based on two-step estimation. We first obtain a pilot GMM estimate by using the identity matrix as the weighting matrix. We then obtain the optimal GMM estimate by an estimated optimal weighting matrix based on the pilot GMM estimate. See Yanagi (2017) for details.</p>
+</div>
+<div id="implementing-gmm-estimation" class="section level2">
+<h2>Implementing GMM estimation</h2>
+<p>The implementation of the GMM estimation requires solving a nonlinear optimization. Since the GMM criterion may have local minima, gradient-based local optimization such as quasi-Newton methods may severely depend on an initial value for the optimization. As a result, such gradient-based optimization may work poorly for the GMM estimation.</p>
+<p>To overcome the problem, <code>LATEerror</code> conducts two-step optimization to find the global minimum. In the first step of the optimization, Differential Evolution (DE) optimization is conducted via <code>DEoptim</code> by Mullen, Ardia, Gil, Windover, and Cline (2011). DE is a metaheuristics that is not a gradient-based optimization, so that it may circumvent the problem due to local minima. However, DE may find a value near global minimum, so that DE does not guarantee finding the global minimum. So, in the second step of the optimization, L-BFGS-B optimization in which the initial value is the argument of the minimum (argmin) by DE is conducted via <code>optim</code>. L-BFGS-B optimization may confirm whether the argmin by DE attains a stationary point of the criterion function.</p>
+<p>Monte Carlo simulations in Yanagi (2017) observe that the two-step optimization works well for the GMM estimation.</p>
+</div>
+<div id="arguments-of-lateerror" class="section level2">
+<h2>Arguments of <code>LATEerror</code></h2>
+<p>The usage for <code>LATEerror</code> is as follows.</p>
+<pre><code>LATEerror(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL)</code></pre>
+<p>The variables <code>Y</code>, <code>D</code>, <code>Z</code>, and <code>V</code> must be specified, but the others are optional.</p>
+<ul>
+<li><p><code>Y</code>: A vector of the outcome variables</p></li>
+<li><p><code>D</code>: A vector of the treatment variables</p></li>
+<li><p><code>Z</code>: A vector of the instrumental variables</p></li>
+<li><p><code>V</code>: A vector of the exogenous variables</p></li>
+<li><p><code>weight</code>: A matrix for the weighting matrix in the pilot GMM estimation. If <code>weight</code> is not specified, the identity matrix is selected as the weighting matrix.</p></li>
+<li><p><code>optimal</code>: Logical. Whether conducting the optimal GMM estimation. If <code>optimal = TRUE</code>, the two-step optimal GMM estimation is implemented.</p></li>
+<li><p><code>equal</code>: Logical. Whether assuming that the misclassification probability does not depend on the instrument. When <span class="math inline">\(V\)</span> takes only two values, <code>equal = TRUE</code> must be specified.</p></li>
+<li><p><code>lower</code>: A vector for lower bounds of the parameters <span class="math inline">\(\theta_0\)</span>. By default, the lower bounds of the LATE and <span class="math inline">\(\tau_z^*\)</span> are <code>min(Y) - max(Y)</code>, that of the true first-stage is 0.001, that of the misclassification probability is 0.001, and those of the other probabilities are 0.001.</p></li>
+<li><p><code>upper</code>: A vector for upper bounds of the parameters <span class="math inline">\(\theta_0\)</span>. By default, the upper bounds of the LATE and <span class="math inline">\(\tau_z^*\)</span> are <code>max(Y) - min(Y)</code>, that of the true first-stage is 0.999, that of the misclassification probability is 0.499, and those of the other probabilities are 0.999.</p></li>
+<li><p><code>controlDE</code>: A list for the control parameters for <code>DEoptim</code> function. The same arguments for <code>control</code> in <code>DEoptim</code> can be specified. See <a href="https://cran.r-project.org/web/packages/DEoptim/index.html">DEoptim</a> for details. Among the control parameters, <code>strategy</code>, <code>NP</code>, <code>itermax</code>, <code>CR</code>, <code>F</code>, <code>initialpop</code>, <code>c</code>, <code>reltol</code>, and <code>steptol</code> are important for the optimization. The performance of the optimization may depend on these variables, so that several patterns for these variables should be tried. By default, <code>LATEerror</code> sets <code>strategy = 2</code>, <code>NP = 10 * length(lower)</code>, <code>itermax = 10000</code>, <code>CR = 0.5</code>, <code>F = 0.8</code>, <code>initialpop = NULL</code>, <code>c = 0.05</code>, <code>reltol = 1e-12</code>, and <code>steptol = 500</code>. <code>DEoptim</code> allows for parallel computing to save time. Parallel computing may be employed via <strong>parallel</strong> or <strong>foreach</strong> package if we set <code>ParallelType = 1</code> or <code>ParallelType=2</code>, respectively. By default, <code>ParallelType = 1</code>. By specifying <code>trace</code>, <code>DEoptim</code> prints progress of optimization at every <code>trace</code> iteration. By default, <code>trace = 100</code>.</p></li>
+<li><p><code>controlBFGS</code>: A list for the control parameters for <code>optim</code> function based on L-BFGS-B algorithm. The same arguments for <code>control</code> in <code>optim</code> can be specified. See <a href="https://stat.ethz.ch/R-manual/R-devel/library/stats/html/optim.html">optim</a> for details. Among the control parameters, the maximum iteration number <code>maxit</code> is important for the optimization. By default, <code>maxit = 1000</code>.</p></li>
+</ul>
+</div>
+<div id="values-of-lateerror" class="section level2">
+<h2>Values of <code>LATEerror</code></h2>
+<p><code>LATEerror</code> returns a list containing the following lists.</p>
+<ul>
+<li><code>pilot</code>: A list containing the following elements for the pilot estimation based on <code>weight</code> as the weighting matrix
+<ul>
+<li><code>est</code>: A vector of parameter estimates</li>
+<li><code>se</code>: A vector of standard errors</li>
+<li><code>ci</code>: A matrix containing 95% confidence intervals for the parameters computed based on the asymptotic normality of the GMM estimator</li>
+<li><code>DEresult</code>: A list returned by <code>DEoptim</code> that contains optimization results by Differential Evolution algorithm</li>
+<li><code>BFGSresult</code>: A list returned by <code>optim</code> that contains optimization results by L-BFGS-B algorithm</li>
+</ul></li>
+<li><code>optimal</code>: A list containing the following elements for the two-step optimal estimation based on the optimal weighting matrix
+<ul>
+<li><code>est</code>: A vector of parameter estimates</li>
+<li><code>se</code>: A vector of standard errors</li>
+<li><code>ci</code>: A matrix containing 95% confidence intervals for the parameters computed based on the asymptotic normality of the GMM estimator</li>
+<li><code>overidentification</code>: A vector for test statistic value and p-value for the over-identification test. It is <code>NULL</code> if there is no over-identification restriction</li>
+<li><code>DEresult</code>: A list returned by <code>DEoptim</code> that contains optimization results by Differential Evolution algorithm</li>
+<li><code>BFGSresult</code>: A list returned by <code>optim</code> that contains optimization results by L-BFGS-B algorithm</li>
+</ul></li>
+</ul>
+</div>
+<div id="remark" class="section level2">
+<h2>Remark</h2>
+<p>The following are general remarks.</p>
+<ul>
+<li><p>The exogenous variable <span class="math inline">\(V\)</span> must take <span class="math inline">\(K\)</span> consecutive discrete values with positive probabilities <span class="math inline">\(\Pr(Z=z, V=v) &gt; 0\)</span> for <span class="math inline">\(z=0,1\)</span> and <span class="math inline">\(v=1,2,\dots,K\)</span>.</p></li>
+<li><p>The variables <code>Y</code>, <code>D</code>, <code>Z</code>, and <code>V</code> cannot contain missing values.</p></li>
+<li><p>DE optimization is based on random sampling numbers. For replicability, it is strongly recommended that <code>set.seed</code> is called before implementing <code>LATEerror</code>.</p></li>
+<li><p>The performance of DE optimization may depend on its control arguments <code>controlDE</code> and <code>controlBFGS</code>. It is highly recommended to attempt several values for the arguments to find the global minimum.</p></li>
+<li><p>If an estimate for a parameter is equal to the specified lower or upper bound, it might imply a failure of optimization convergence. In this case, you should try different values for <code>controlDE</code> and <code>controlBFGS</code>.</p></li>
+</ul>
+</div>
+<div id="example" class="section level2">
+<h2>Example</h2>
+<p>The following presents <code>LATEerror</code> implementation based on simulated data. The simulated data is generated as follows.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n &lt;-<span class="st"> </span><span class="dv">1000</span>
+<span class="kw">set.seed</span>(<span class="dv">102</span>)
+mydata &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">U1 =</span> <span class="kw">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>), <span class="dt">U2 =</span> <span class="kw">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>))
+mydata &lt;-<span class="st"> </span>mydata %&gt;%
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">Z =</span> <span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.5</span>)) %&gt;%
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">V =</span> <span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.5</span>) +<span class="st"> </span><span class="dv">1</span>) %&gt;%
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">Ds =</span> <span class="kw">ifelse</span>(( -<span class="fl">1.25</span> +<span class="st"> </span>Z +<span class="st"> </span><span class="fl">0.5</span> *<span class="st"> </span>V -<span class="st"> </span>U1 &gt;=<span class="st"> </span><span class="dv">0</span>), <span class="dv">1</span>, <span class="dv">0</span>)) %&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">D =</span> Ds *<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.8</span>) +<span class="st"> </span>(<span class="dv">1</span> -<span class="st"> </span>Ds) *<span class="st"> </span><span class="kw">rbinom</span>(n, <span class="dt">size =</span> <span class="dv">1</span>, <span class="dt">prob =</span> <span class="fl">0.2</span>)) %&gt;%
+<span class="st">  </span>dplyr::<span class="kw">mutate</span>(<span class="dt">Y =</span> <span class="dv">1</span> +<span class="st"> </span>Ds +<span class="st"> </span>U2)</code></pre></div>
+<p>The following code implements <code>LATEerror</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">102</span>)
+gmm &lt;-<span class="st"> </span>LATEerror::<span class="kw">LATEerror</span>(<span class="dt">Y =</span> mydata$Y, <span class="dt">D =</span> mydata$D, <span class="dt">Z =</span> mydata$Z, <span class="dt">V =</span> mydata$V)</code></pre></div>
+<p>The results from <code>LATEerror</code> can be checked by the following codes.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># estimates by the pilot GMM estimation</span>
+gmm$pilot$estimate
+<span class="co"># standard errors by the pilot GMM estimation</span>
+gmm$pilot$se
+<span class="co"># 95% confidence intervals by the pilot GMM estimation</span>
+gmm$pilot$ci
+
+<span class="co"># estimates by the optimal GMM estimation</span>
+gmm$optimal$estimate
+<span class="co"># standard errors by the optimal GMM estimation</span>
+gmm$optimal$se
+<span class="co"># 95% confidence intervals by the optimal GMM estimation</span>
+gmm$optimal$ci
+<span class="co"># overidentification test by the optimal GMM estimation</span>
+gmm$optimal$overidentification</code></pre></div>
+<p>Note that <code>gmm$optimal$overidentification = NULL</code> in this example since there is no over-identification restriction.</p>
+</div>
+<div id="see-also" class="section level2">
+<h2>See Also</h2>
+<p><a href="https://cran.r-project.org/web/packages/DEoptim/index.html">DEoptim</a>, <a href="https://stat.ethz.ch/R-manual/R-devel/library/stats/html/optim.html">optim</a></p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Takahide Yanagi (2017): <a href="http://hdl.handle.net/10086/28337">Inference on Local Average Treatment Effects for Misclassified Treatment</a></p>
+<p>Katharine Mullen, David Ardia, David Gil, Donald Windover, James Cline (2011): <a href="http://www.jstatsoft.org/v40/i06/"><code>DEoptim</code>: An R Package for Global Optimization by Differential Evolution</a>. Journal of Statistical Software, 40(6), 1-26.</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
