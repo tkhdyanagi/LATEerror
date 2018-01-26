@@ -1,34 +1,49 @@
-#' Computing the value of the GMM criterion.
+#' Computing the GMM criterion.
 #'
-#' @param par A vector of parameters for the GMM estimation.
-#' @param data A data.frame containing the outcome Y, treatment D, instrument Z, exogenous variable V.
-#' @param weight A matrix for the weighting matrix in the GMM estimation.
-#' @param equal Logical. Whether imposing restrictions that the misclassification probabilities do not depend on Z?
+#' \code{criterion} is an auxiliary function to implement the GMM inference on your own.
+#' It returns a value of the GMM criterion.
+#'
+#' @param par vector of parameter values
+#' @param data dataframe that contains Y, D, Z, and V with indicators
+#' @param weight weighting matrix for GMM estimation
+#' @param equal logical whether the misclassification probabilities do not depend on instrument
+#'
+#' @export
 #'
 criterion <- function(par, data, weight, equal) {
+
+  # the means of the moments
   S <- mean_moments(par = par, data = data, equal = equal)
+
+  # criterion
   return(t(S) %*% weight %*% S)
+
 }
 
 
 
-#' Computing the mean of the moments for the GMM estimation.
+#' Computing the means of the moments for the GMM estimation.
 #'
-#' @param par A vector of parameters for the GMM estimation.
-#' @param data A data.frame containing the outcome Y, treatment D, instrument Z, exogenous variable V.
-#' @param equal Logical. Whether imposing restrictions that the misclassification probabilities do not depend on Z?
+#' @param par vector of parameter values
+#' @param data dataframe containing the outcome, treatment, instrument, exogenous variable
+#' @param equal logical whether the misclassification probabilities do not depend on instrument
 #'
 mean_moments <- function(par, data, equal) {
-  return(colMeans(moments(par = par, data = data, equal = equal)))
+
+  # the means of the moments
+  result <- colMeans(moments(par = par, data = data, equal = equal))
+
+  return(result)
+
 }
 
 
 
 #' Computing the values of the moments for the GMM estimation.
 #'
-#' @param par A vector of parameters for the GMM estimation.
-#' @param data A data.frame containing the outcome Y, treatment D, instrument Z, exogenous variable V.
-#' @param equal Logical. Whether imposing restrictions that the misclassification probabilities do not depend on Z?
+#' @param par vector of parameter values
+#' @param data dataframe containing the outcome, treatment, instrument, exogenous variable
+#' @param equal logical whether the misclassification probabilities do not depend on instrument
 #'
 moments <- function(par, data, equal) {
 
@@ -118,26 +133,4 @@ moments <- function(par, data, equal) {
 
     return(f)
   }
-}
-
-#' Estimating the variance-covariance matrix of the moments for the GMM estimation.
-#'
-#' @param par A vector of parameters for the GMM estimation.
-#' @param data A data.frame containing the outcome Y, treatment D, instrument Z, exogenous variable V.
-#' @param equal Logical. Whether imposing restrictions that the misclassification probabilities do not depend on Z?
-#'
-var_moments <- function(par, data, equal) {
-
-  K <- max(data$V)
-
-  f <- moments(par = par, data = data, equal = equal)
-
-  hat_gamma <- NULL
-  j <- 0
-  for (j in 1:(3 + 4 * K)) {
-    hat_gamma <- rbind(hat_gamma, colMeans(f * f[, j]))
-  }
-
-  return(hat_gamma)
-
 }

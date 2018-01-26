@@ -1,8 +1,8 @@
 Package: LATEerror
-Title: Inference on LATE for misclassified treatment
-Version: 0.1.0
+Title: Inference on the local average treatment effect for a mismeasured binary treatment
+Version: 0.2.0
 Authors@R: person("Takahide", "Yanagi", email = "t.yanagi@r.hit-u.ac.jp", role = c("aut", "cre"))
-Description: Implementing the GMM procedure to estimate the LATE for misclassified treatment.
+Description: The package implements the generalized method of moments procedure to estimate the local average treatment effect for a mismeasured binary treatment.
 Depends: R (>= 3.4.2)
 License: MIT + file LICENSE
 Encoding: UTF-8

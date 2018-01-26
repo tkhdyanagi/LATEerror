@@ -7,11 +7,11 @@
 moments(par, data, equal)
 }
 \arguments{
-\item{par}{A vector of parameters for the GMM estimation.}
+\item{par}{vector of parameter values}
 
-\item{data}{A data.frame containing the outcome Y, treatment D, instrument Z, exogenous variable V.}
+\item{data}{dataframe containing the outcome, treatment, instrument, exogenous variable}
 
-\item{equal}{Logical. Whether imposing restrictions that the misclassification probabilities do not depend on Z?}
+\item{equal}{logical whether the misclassification probabilities do not depend on instrument}
 }
 \description{
 Computing the values of the moments for the GMM estimation.

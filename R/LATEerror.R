@@ -1,30 +1,47 @@
-#' Implementing the GMM inference to estimate the LATE for misclassified treatment.
+#' GMM inference to estimate the LATE for a mismeasured binary treatment
 #'
-#' @param Y A vector of outcome variable.
-#' @param D A vector of treatment variable.
-#' @param Z A vector of instrument.
-#' @param V A vector of exogenous variable.
-#' @param weight A matrix for the weighting matrix for pilot GMM estimation.
-#' @param optimal Logical. Whether implementing the optimal GMM estimation?
-#' @param equal Logical. Whether imposing restrictions that the misclassification probabilities do not depend on Z?
-#' @param lower A vector for lower bounds of parameters.
-#' @param upper A vector for upper bounds of parameters.
-#' @param controlDE A list for control parameters for \code{\link[DEoptim]{DEoptim}}.
-#' @param controlBFGS A list for control parameters for \code{\link[stats]{optim}} with L-BFGS-B method.
+#' \code{LATEerror} implements the GMM inference to correct a measurement error
+#' problem due to a mismeasured binary treatment in the LATE inference
+#' developed in Yanagi (2017).
+#' See the package vignette via \code{vignette("LATEerror")} for more details.
 #'
-#' @return The output is a list that contains the following two list.
-#'   (1) A list for pilot estimation results by the pilot GMM estimation based on weight.
-#'   (2) A list for optimal estimation results by the optimal GMM estimation based on the optimal weighting matrix.
+#' @param Y vector of the outcome
+#' @param D vector of the treatment
+#' @param Z vector of the instrument
+#' @param V vector of the exogenous variable
+#' @param weight weighting matrix for the pilot GMM estimation
+#' @param optimal logical whether implementing the optimal GMM estimation
+#' @param equal logical whether the misclassification probabilities do not depend on the instrument
+#' @param lower vector of lower bounds of the parameters
+#' @param upper vector of upper bounds of the parameters
+#' @param control list of the control parameters for \code{\link[DEoptim]{DEoptim}}
 #'
-#' @seealso \code{\link[DEoptim]{DEoptim}} for controlDE and \code{\link[stats]{optim}} for controlBFGS.
+#' @return list that contains the two lists: (i) \code{pilot}, (ii) \code{optimal}.\cr
+#' \code{pilot} contains the following elements.
+#' \item{estimate}{vector of parameter estimates}
+#' \item{se}{vector of standard errors}
+#' \item{ci}{matrix that contains 95 percent confidence intervals}
+#' \item{optim}{list that contains the results of the optimization via \code{DEoptim}}
+#' \item{weight}{weighting matrix for the pilot GMM estimation}
+#' \code{optimal} contains the following elements.
+#' \item{estimate}{vector of parameter estimates}
+#' \item{se}{vector of standard errors}
+#' \item{ci}{matrix that contains 95 percent confidence intervals}
+#' \item{overidentification}{vector that contains a value of the test statistic and p-value for the over-identification test}
+#' \item{weight}{weighting matrix for the optimal GMM estimation}
+#' \item{optim}{list that contains the results of the optimization via \code{DEoptim}}
+#'
+#' @seealso \code{\link[DEoptim]{DEoptim}} for the elements in \code{control}
 #'
 #' @importFrom DEoptim DEoptim
-#' @importFrom MASS ginv
-#' @importFrom numDeriv jacobian
-#' @importFrom stats optim pchisq qnorm
 #'
 #' @export
-LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL) {
+#'
+LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = FALSE, equal = TRUE, lower = NULL, upper = NULL, control = NULL) {
+
+  #-----------------------------------------------------------------------------
+  # preparation
+  #-----------------------------------------------------------------------------
 
   # sample size
   n <- length(Y)
@@ -33,11 +50,9 @@ LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, l
   if (n != length(D) || n != length(Z) || n != length(V)) {
     stop(message = "The lengths of Y, D, Z, and V must be the same.")
   }
-
   if (min(D) != 0 || max(D) != 1 || sum(D == 0) == 0 || sum(D == 1) == 0) {
     stop(message = "D must take two values of 0 and 1.")
   }
-
   if (min(Z) != 0 || max(Z) != 1 || sum(Z == 0) == 0 || sum(Z == 1) == 0) {
     stop(message = "Z must take two values of 0 and 1.")
   }
@@ -46,47 +61,24 @@ LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, l
   K <- max(V)
 
   # the number of the parameters and the names of the parameters
-  if (equal == FALSE) {
-    number_par <- 2 * K + 9
-    name_par <- c("LATE", "first-stage", "E(Z)", "tau0*", "tau1*", "m00", "m01", "m10", "m11")
-    j <- 0
-    for (j in 1:K) {
-      name_par <- c(name_par, sprintf("p0%d*", j))
-    }
-    j <- 0
-    for (j in 1:K) {
-      name_par <- c(name_par, sprintf("p1%d*", j))
-    }
-  } else if (equal == TRUE) {
-    number_par <- 2 * K + 7
-    name_par <- c("LATE", "first-stage", "E(Z)", "tau0*", "tau1*", "m0", "m1")
-    j <- 0
-    for (j in 1:K){
-      name_par <- c(name_par, sprintf("p0%d*", j))
-    }
-    j <- 0
-    for (j in 1:K){
-      name_par <- c(name_par, sprintf("p1%d*", j))
-    }
-  }
+  number_name <- number_name_par(equal = equal, K = K)
+  number_par <- number_name$number_par
+  name_par <- number_name$name_par
 
   # the number of the moments
   number_moment <- 3 + 4 * K
 
   # stop with error messages
-  j <- 0
   for (j in 1:K) {
     if (min(V) <= 0 || sum(V == j) == 0) {
       stop(message = "V must take K consecutive discrete values (1, 2, ..., K).")
     }
   }
-
   if (K <= 2 && equal == FALSE) {
     stop(message = "If 'equal = FALSE', V must take at least three values.")
   }
-
-  if (is.null(weight) == FALSE) {
-    if (is.matrix(weight) == FALSE) {
+  if (!is.null(weight)) {
+    if (!is.matrix(weight)) {
       stop(message = "'weight' must be NULL or a symmetric matrix.")
     } else if (ncol(weight) != number_moment && nrow(weight) != number_moment) {
       stop(message = "'weight' must be NULL or a symmetric matrix.")
@@ -94,32 +86,23 @@ LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, l
       stop(message = "'weight' must be NULL or a symmetric matrix.")
     }
   }
-
-  if (is.logical(optimal) == FALSE) {
+  if (!is.logical(optimal)) {
     stop(message = "'optimal' must be logical.")
   }
 
-  # making data frame with indicators
-  data <- data.frame(Y = Y, D = D, Z = Z, V = V)
-  j <- 0
-  for (j in 1:K) {
-    varname0 <- sprintf("I0%d", j)
-    data[[varname0]] <- (1 - Z) * ifelse(V == j, 1, 0)
-    varname1 <- sprintf("I1%d", j)
-    data[[varname1]] <- Z * ifelse(V == j, 1, 0)
-  }
+  # making data frame with the indicators
+  data <- addindicators(Y = Y, D = D, Z = Z, V = V)
 
   # lower and upper bounds for optimization
   bound <- max(Y) - min(Y)
-
   if (is.null(lower)) {
     if (equal == FALSE) {
       lower <- c(-bound, 0.001, 0.001, -bound, -bound, rep(0.001, 4), rep(0.001, 2 * K))
-    } else if ( equal == TRUE ){
+    } else if (equal == TRUE){
       lower <- c(-bound, 0.001, 0.001, -bound, -bound, rep(0.001, 2), rep(0.001, 2 * K))
     }
   } else {
-    if (is.vector(lower) == FALSE) {
+    if (!is.vector(lower)) {
       stop(message = "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
     } else if (length(lower) != number_par) {
       stop(message = "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
@@ -133,7 +116,6 @@ LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, l
       }
     }
   }
-
   if (is.null(upper)) {
     if (equal == FALSE) {
       upper <- c(bound, 0.999, 0.999, bound, bound, rep(0.499, 4), rep(0.999, 2 * K))
@@ -141,7 +123,7 @@ LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, l
       upper <- c(bound, 0.999, 0.999, bound, bound, rep(0.499, 2), rep(0.999, 2 * K))
     }
   } else {
-    if (is.vector(upper) == FALSE) {
+    if (!is.vector(upper)) {
       stop(message = "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
     } else if (length(upper) != number_par) {
       stop(message = "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
@@ -156,7 +138,7 @@ LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, l
     }
   }
 
-  # weight matrix for pilot estimation
+  # weight matrix for the pilot estimation
   if (is.null(weight)) {
     weight1 <- diag(number_moment)
   } else {
@@ -164,167 +146,96 @@ LATEerror <- function(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, l
   }
 
   # control for DE algorithm
-  if (is.list(controlDE) == FALSE && is.null(controlDE) == FALSE) {
-    stop(message = "'controlDE' must be correctly specified.")
+  if (!is.list(control) && !is.null(control)) {
+    stop(message = "'control' must be correctly specified.")
+  }
+  if (is.null(control$NP)) {
+    control$NP <- 10 * number_par
+  }
+  if (is.null(control$itermax)) {
+    control$itermax <- 10000
+  }
+  if (is.null(control$steptol)) {
+    control$steptol <- 500
+  }
+  if (is.null(control$reltol)) {
+    control$reltol <- 1e-12
+  }
+  if (is.null(control$trace)) {
+    control$trace <- 100
+  }
+  if (is.null(control$CR)) {
+    control$CR <- 0.5
+  }
+  if (is.null(control$F)){
+    control$F <- 0.8
+  }
+  if (is.null(control$c)){
+    control$c <- 0.05
+  }
+  if (is.null(control$strategy)){
+    control$strategy <- 2
+  }
+  if (is.null(control$parallelType)) {
+    control$parallelType <- 1
   }
 
-  if (is.null(controlDE$NP)) {
-    controlDE$NP <- 10 * number_par
-  }
+  #-----------------------------------------------------------------------------
+  # pilot estimation
+  #-----------------------------------------------------------------------------
 
-  if (is.null(controlDE$itermax)) {
-    controlDE$itermax <- 10000
-  }
+  # optimization
+  estDE1 <- DEoptim(fn = criterion, lower = lower, upper = upper, data = data, equal = equal, weight = weight1, control = control)
 
-  if (is.null(controlDE$steptol)) {
-    controlDE$steptol <- 500
-  }
+  # pilot estimates
+  estimate1 <- estDE1$optim$bestmem
 
-  if (is.null(controlDE$reltol)) {
-    controlDE$reltol <- 1e-12
-  }
+  # standard errors and confidence intervals
+  inference1 <- inference(par = estimate1, data = data, weight = weight1, equal = equal)
 
-  if (is.null(controlDE$trace)) {
-    controlDE$trace <- 100
-  }
-
-  if (is.null(controlDE$CR)) {
-    controlDE$CR <- 0.5
-  }
-
-  if (is.null(controlDE$F)){
-    controlDE$F <- 0.8
-  }
-
-  if (is.null(controlDE$c)){
-    controlDE$c <- 0.05
-  }
-
-  if (is.null(controlDE$strategy)){
-    controlDE$strategy <- 2
-  }
-
-  if (is.null(controlDE$parallelType)) {
-    controlDE$parallelType <- 1
-  }
-
-  # control for optim
-  if (is.list(controlBFGS) == FALSE && is.null(controlBFGS) == FALSE) {
-    stop(message = "'controlBFGS' must be correctly specified.")
-  }
-
-  if (is.null(controlBFGS$maxit)) {
-    controlBFGS$maxit <- 1000
-  }
-
-  # pilot estimation------------------------------------------------------------
-  # optimization based on DE algorithm for pilot estimation
-  estDE1 <- DEoptim(fn = criterion, lower = lower, upper = upper, data = data, equal = equal, weight = weight1, control = controlDE)
-
-  # optimization check based on L-BFGS-B method for pilot estimation
-  estBFGS1 <- optim(par = estDE1$optim$bestmem, fn = criterion, lower = lower, upper = upper, method = "L-BFGS-B", control = controlBFGS, data = data, weight = weight1, equal = equal)
-
-  # pilot estimation results
-  estimate1 <- estBFGS1$par
-
-  # computing standard errors for pilot estimation
-  G1 <- jacobian(mean_moments, estimate1, data = data, equal = equal)
-  var_moments_estimate1 <- var_moments(par = estimate1, data = data, equal = equal)
-  if (qr(t(G1) %*% weight1 %*% G1)$rank < number_par) {
-
-    covariance1 <- ginv(t(G1) %*% weight1 %*% G1) %*%
-      t(G1) %*% weight1 %*% var_moments_estimate1 %*% weight1 %*% G1 %*%
-      ginv(t(G1) %*% weight1 %*% G1) / n
-
-    warning("A matrix for asymptotic covariance matrix estimation is singular.
-            The generalized inverse is used.")
-
-  } else {
-
-    covariance1 <- solve(t(G1) %*% weight1 %*% G1) %*%
-      t(G1) %*% weight1 %*% var_moments_estimate1 %*% weight1 %*% G1 %*%
-      solve(t(G1) %*% weight1 %*% G1) / n
-
-  }
-  se1 <- sqrt(diag(covariance1))
-
-  # computing confidence intervals for pilot estimation
-  ci1 <- rbind(estimate1 + qnorm(0.025) * se1, estimate1 + qnorm(0.975) * se1)
-
-  # reporting pilot estimation results
-  names(estimate1) <- name_par
-  names(se1) <- name_par
-  colnames(ci1) <- name_par
-  rownames(ci1) <- c("95%CI lower", "95%CI upper")
-
-  estimation1 <- list(estimate = estimate1, se = se1, ci = ci1, DEresult = estDE1$optim, BFGSresult = estBFGS1)
+  # pilot estimation result
+  estimation1 <- list(estimate = inference1$estimate, se = inference1$se, ci = inference1$ci, optim = estDE1$optim, weight = weight1)
 
   if (optimal == FALSE) {
     result <- list(pilot = estimation1)
     return(result)
   }
 
-  # optimal estimation----------------------------------------------------------
-  # weight matrix for optimal estimation
+  #-----------------------------------------------------------------------------
+  # optimal estimation
+  #-----------------------------------------------------------------------------
+
+  # optimal weighting matrix
+  var_moments_estimate1 <- var_moments(par = estimate1, data = data, equal = equal)
   weight2 <- solve(var_moments_estimate1)
 
-  # optimization based on DE method for optimal estimation
-  estDE2 <- DEoptim(fn = criterion, lower = lower, upper = upper, data = data, weight = weight2, equal = equal, control = controlDE)
+  # optimization
+  estDE2 <- DEoptim(fn = criterion, lower = lower, upper = upper, data = data, weight = weight2, equal = equal, control = control)
 
-  # optimization check by L-BFGS-B method for optimal estimation
-  estBFGS2 <- optim(par = estDE2$optim$bestmem, fn = criterion, lower = lower, upper = upper, method = "L-BFGS-B", control = controlBFGS, data = data, weight = weight2, equal = equal)
+  # optimal estimates
+  estimate2 <- estDE2$optim$bestmem
 
-  # optimal estimation results
-  estimate2 <- estBFGS2$par
+  # standard errors for optimal estimation
+  inference2 <- inference(par = estimate2, data = data, weight = weight2, equal = equal)
 
-  # computing standard errors for optimal estimation
-  G2 <- jacobian(mean_moments, estimate2, data = data, equal = equal)
-  var_moments_estimate2 <- var_moments(par = estimate2, data = data, equal = equal)
-  if (qr(t(G2) %*% weight2 %*% G2)$rank < number_par) {
-
-    covariance2 <- ginv(t(G2) %*% weight2 %*% G2) %*%
-      t(G2) %*% weight2 %*% var_moments_estimate2 %*% weight2 %*% G2 %*%
-      ginv(t(G2) %*% weight2 %*% G2) / n
-
-    warning("A matrix for asymptotic covariance matrix estimation is singular.
-            The generalized inverse is used.")
-
-  } else {
-
-    covariance2 <- solve(t(G2) %*% weight2 %*% G2) %*%
-      t(G2) %*% weight2 %*% var_moments_estimate2 %*% weight2 %*% G2 %*%
-      solve(t(G2) %*% weight2 %*% G2) / n
-
-  }
-
-  se2 <- sqrt(diag(covariance2))
-
-  # computing confidence intervals for optimal estimation
-  ci2 <- rbind(estimate2 + qnorm(0.025) * se2, estimate2 + qnorm(0.975) * se2)
-
-  # reporting optimal estimation results
-  names(estimate2) <- name_par
-  names(se2) <- name_par
-  colnames(ci2) <- name_par
-  rownames(ci2) <- c("95%CI lower", "95%CI upper")
-
-  # conducting over-identication test
+  # over-identication test
   if (number_moment > number_par) {
 
-    S2 <- mean_moments(par = estimate2, data = data, equal = equal)
-    over_test <- n * S2 %*% solve(var_moments_estimate2) %*% S2
-    over_test_p <- 1 - pchisq(q = over_test, df = (number_moment - number_par))
-    overidentification <- c(over_test, over_test_p)
-    names(overidentification) <- c("test statistic", "p-value")
-
-    estimation2 <- list(estimate = estimate2, se = se2, ci = ci2, overidentification = overidentification, DEresult = estDE2$optim, BFGSresult = estBFGS2)
+    overidentification <- Jtest(par = estimate2, data = data, equal = equal)
 
   } else {
 
-    estimation2 <- list(estimate = estimate2, se = se2, ci = ci2, DEresult = estDE2$optim, BFGSresult = estBFGS2)
+    overidentification <- NULL
 
   }
 
-  return(list(pilot = estimation1, optimal = estimation2))
+  # optimal estimation result
+  estimation2 <- list(estimate = inference2$estimate, se = inference2$se,
+                      ci = inference2$ci, overidentification = overidentification,
+                      weight = weight2, optim = estDE2$optim)
+
+  result <- list(pilot = estimation1, optimal = estimation2)
+
+  return(result)
 
 }

@@ -13,39 +13,35 @@ mydata <- mydata %>%
   dplyr::mutate(Y = 1 + Ds + U2)
 
 # errors for data
-expect_error(LATEerror(Y = NA, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "The lengths of Y, D, Z, and V must be the same.")
+expect_error(LATEerror(Y = NA, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, control = NULL), "The lengths of Y, D, Z, and V must be the same.")
 
-expect_error(LATEerror(Y = mydata$Y, D = NULL, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "The lengths of Y, D, Z, and V must be the same.")
+expect_error(LATEerror(Y = mydata$Y, D = NULL, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, control = NULL), "The lengths of Y, D, Z, and V must be the same.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = 1, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "The lengths of Y, D, Z, and V must be the same.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = 1, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, control = NULL), "The lengths of Y, D, Z, and V must be the same.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = Inf, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "The lengths of Y, D, Z, and V must be the same.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = Inf, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, control = NULL), "The lengths of Y, D, Z, and V must be the same.")
 
 # errors for weight matrix
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = 1, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "'weight' must be NULL or a symmetric matrix.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = 1, optimal = TRUE, lower = NULL, upper = NULL, control = NULL), "'weight' must be NULL or a symmetric matrix.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = diag(2), optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "'weight' must be NULL or a symmetric matrix.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = diag(2), optimal = TRUE, lower = NULL, upper = NULL, control = NULL), "'weight' must be NULL or a symmetric matrix.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = FALSE, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "'weight' must be NULL or a symmetric matrix.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = FALSE, optimal = TRUE, lower = NULL, upper = NULL, control = NULL), "'weight' must be NULL or a symmetric matrix.")
 
 # errors for optimal
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = 1, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "'optimal' must be logical.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = 1, lower = NULL, upper = NULL, control = NULL), "'optimal' must be logical.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = diag(9), lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = NULL), "'optimal' must be logical.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = diag(9), lower = NULL, upper = NULL, control = NULL), "'optimal' must be logical.")
 
 # errors for lower and upper
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = 1, upper = NULL, controlDE = NULL, controlBFGS = NULL), "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = 1, upper = NULL, control = NULL), "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NA, controlDE = NULL, controlBFGS = NULL), "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NA, control = NULL), "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = Inf, controlDE = NULL, controlBFGS = NULL), "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = Inf, control = NULL), "The lengths of 'lower' and 'upper' must be identical to that of the parameters.")
 
-# errors for controlDE
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = TRUE, controlBFGS = NULL), "'controlDE' must be correctly specified.")
+# errors for control
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, control = TRUE), "'control' must be correctly specified.")
 
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = 1, controlBFGS = NULL), "'controlDE' must be correctly specified.")
+expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, control = 1), "'control' must be correctly specified.")
 
-# errors for controlBFGS
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = FALSE), "'controlBFGS' must be correctly specified.")
-
-expect_error(LATEerror(Y = mydata$Y, D = mydata$D, Z = mydata$Z, V = mydata$V, weight = NULL, optimal = TRUE, lower = NULL, upper = NULL, controlDE = NULL, controlBFGS = diag(10)), "'controlBFGS' must be correctly specified.")

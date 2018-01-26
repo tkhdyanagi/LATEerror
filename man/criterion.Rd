@@ -2,19 +2,20 @@
 % Please edit documentation in R/moments.R
 \name{criterion}
 \alias{criterion}
-\title{Computing the value of the GMM criterion.}
+\title{Computing the GMM criterion.}
 \usage{
 criterion(par, data, weight, equal)
 }
 \arguments{
-\item{par}{A vector of parameters for the GMM estimation.}
+\item{par}{vector of parameter values}
 
-\item{data}{A data.frame containing the outcome Y, treatment D, instrument Z, exogenous variable V.}
+\item{data}{dataframe that contains Y, D, Z, and V with indicators}
 
-\item{weight}{A matrix for the weighting matrix in the GMM estimation.}
+\item{weight}{weighting matrix for GMM estimation}
 
-\item{equal}{Logical. Whether imposing restrictions that the misclassification probabilities do not depend on Z?}
+\item{equal}{logical whether the misclassification probabilities do not depend on instrument}
 }
 \description{
-Computing the value of the GMM criterion.
+\code{criterion} is an auxiliary function to implement the GMM inference on your own.
+It returns a value of the GMM criterion.
 }
