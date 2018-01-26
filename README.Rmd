@@ -26,7 +26,7 @@ Run the following code to install **LATEerror**.
 
 ```{r, eval = FALSE}
 install.packages("devtools")
-devtools::install_github("tkhdyanagi/LATEerror")
+devtools::install_github("tkhdyanagi/LATEerror", build_vignettes = TRUE)
 library(LATEerror)
 ```
 
