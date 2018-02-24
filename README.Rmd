@@ -16,29 +16,23 @@ knitr::opts_chunk$set(
 
 # LATEerror
 
-**LATEerror** implements the generalized method of moments estimation for the local average treatment effect when the binary treatment variable may be mismeasured.
+This R package implements the generalized method of moments estimation for the local average treatment effect when the binary treatment variable may be mismeasured.
 The estimation procedure is developed by Yanagi (2017).
 
 
 # Intsallation
 
-Run the following code to install **LATEerror**.
+Run the following codes to install the package.
 
 ```{r, eval = FALSE}
-install.packages("devtools")
+install.packages("devtools") # if needed
 devtools::install_github("tkhdyanagi/LATEerror", build_vignettes = TRUE)
-library(LATEerror)
 ```
 
-
-# Usage
-
+You can see the usage of the package by the following codes.
 
 ```{r, eval = FALSE}
-LATEerror(Y, D, Z, V, weight = NULL, optimal = TRUE, equal = TRUE, lower = NULL, upper = NULL, control = NULL)
+library("LATEerror")
+vignette("LATEerror")
 ```
 
-
-# See also
-
-1. See the package vignette via `vignette("LATEerror")` for more details.
